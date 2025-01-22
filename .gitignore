@@ -1,0 +1,15 @@
+# Byte-compiled files
+__pycache__/
+*.py[cod]
+
+# Log files
+*.log
+
+# Test output
+coverage/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# macOS-specific files
+.DS_Store
