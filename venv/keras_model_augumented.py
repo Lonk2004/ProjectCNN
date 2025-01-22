@@ -39,9 +39,9 @@ gcimage_bins = np.ones(len(gcimages))
 galaxyimages = load_images('/Users/jackskinner/Documents/3rd Year/Computer Science/astrodataset/astrodataset/outputdata/outputfits/galaxies',200)
 galaxyimage_bins = np.zeros(len(galaxyimages))
 #Load synthetic gcs. testsynthetic used to validate CNNs ability to recognise synthetic data.
-syntheticgcimages = load_images('/Users/jackskinner/Documents/3rd Year/Computer Science/myenv/clusters train',100)
+syntheticgcimages = load_images('/Volumes/Backup Plus/Pandas_Data/clusters',100)
 syntheticgcimage_bins = np.ones(len(syntheticgcimages))
-testsyntheticgcimages = load_images('/Users/jackskinner/Documents/3rd Year/Computer Science/myenv/clusters train',500)
+testsyntheticgcimages = load_images('/Volumes/Backup Plus/Pandas_Data/clusters',500)
 testsyntheticgcimage_bins = np.ones(len(testsyntheticgcimages))
 # Combine images
 images = np.concatenate((gcimages, galaxyimages,syntheticgcimages), axis=0)

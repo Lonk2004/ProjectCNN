@@ -13,3 +13,6 @@ coverage/
 
 # macOS-specific files
 .DS_Store
+
+# Lib files 
+venv/lib
