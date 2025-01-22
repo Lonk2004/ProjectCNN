@@ -8,6 +8,7 @@ from tensorflow.keras.metrics import Recall
 from sklearn.utils import class_weight
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
+import random
 
 #Function call to store fits images as a numpy array. Enter noimages to balance classes. 
 def load_images(path, noimages): 
@@ -15,31 +16,32 @@ def load_images(path, noimages):
         images = []
         nofiles = 0
         for file in files: 
-            if file.name.startswith('.') or nofiles == noimages:
-                continue  
+            file_list = [file for file in files if not file.name.startswith('.')]
+            selected_files = random.sample(file_list, min(noimages, len(file_list)))
             #Exeption handling if dataset contains non fits file
-            try: 
-                image = fits.open(file)
-            except:
-                continue
-            data = image[0].data 
-            data = data.astype(np.float32)
-            data = np.expand_dims(data, axis=-1)
-            data = tf.image.resize(data, (128, 128))
-            #Normalise the data for the CNN
-            data = data / np.max(data)
-            images.append(data)
-            nofiles += 1 
+            for file in selected_files:
+                try: 
+                    image = fits.open(file)
+                except:
+                    continue
+                data = image[0].data 
+                data = data.astype(np.float32)
+                data = np.expand_dims(data, axis=-1)
+                data = tf.image.resize(data, (128, 128))
+                #Normalise the data for the CNN
+                data = data / np.max(data)
+                images.append(data)
+                nofiles += 1 
     return np.array(images)
 
 
 #Load all images in directories
-gcimages = load_images('/Users/jackskinner/Documents/3rd Year/Computer Science/astrodataset/astrodataset/outputdata/outputfits/fitsgcs',100)
+gcimages = load_images('/Users/jackskinner/Documents/3rd Year/Computer Science/astrodataset/astrodataset/outputdata/outputfits/fitsgcs',135)
 gcimage_bins = np.ones(len(gcimages))
-galaxyimages = load_images('/Users/jackskinner/Documents/3rd Year/Computer Science/astrodataset/astrodataset/outputdata/outputfits/galaxies',200)
+galaxyimages = load_images('/Users/jackskinner/Documents/3rd Year/Computer Science/astrodataset/astrodataset/outputdata/outputfits/galaxies',271)
 galaxyimage_bins = np.zeros(len(galaxyimages))
 #Load synthetic gcs. testsynthetic used to validate CNNs ability to recognise synthetic data.
-syntheticgcimages = load_images('/Volumes/Backup Plus/Pandas_Data/clusters',100)
+syntheticgcimages = load_images('/Volumes/Backup Plus/Pandas_Data/clusters',136)
 syntheticgcimage_bins = np.ones(len(syntheticgcimages))
 testsyntheticgcimages = load_images('/Volumes/Backup Plus/Pandas_Data/clusters',500)
 testsyntheticgcimage_bins = np.ones(len(testsyntheticgcimages))
@@ -53,7 +55,7 @@ image_bins = np.concatenate((gcimage_bins, galaxyimage_bins,syntheticgcimage_bin
 
 #Use train_test_split to create training and testing data, with balanced image bins
 X_train, X_temp, y_train, y_temp = train_test_split(
-    images, image_bins, test_size=0.5, random_state=10, shuffle=True, stratify=image_bins
+    images, image_bins, test_size=0.2, random_state=10, shuffle=True, stratify=image_bins
 )
 
 # Split the test data into validation and testing data. 
@@ -83,7 +85,6 @@ val_batches_needed = batches_needed / 10
 print(y_train)
 # Create augmented images using the datagen.flow()
 image_generator = datagen.flow(X_train, y_train, batch_size=batch_size, shuffle=True)
-val_image_generator = datagen.flow(X_val, y_val, batch_size=batch_size, shuffle=True)
 
 
 # Loop over the generator and save the generated images
@@ -106,7 +107,7 @@ dataset = dataset.batch(batch_size)
 dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
 
 val_dataset = tf.data.Dataset.from_tensor_slices((X_val, y_val))
-val_dataset = dataset.shuffle(buffer_size=len(X_val))
+val_dataset = val_dataset.shuffle(buffer_size=len(X_val))
 val_dataset = val_dataset.batch(batch_size)
 val_dataset = val_dataset.prefetch(tf.data.experimental.AUTOTUNE)
 
