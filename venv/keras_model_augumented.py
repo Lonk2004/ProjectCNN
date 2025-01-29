@@ -5,6 +5,7 @@ import numpy as np
 from keras import Sequential
 from astropy.io import fits 
 from tensorflow.keras.metrics import Recall 
+from tensorflow.keras.layers import RandomTranslation
 from sklearn.utils import class_weight
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
@@ -70,14 +71,14 @@ X_val, X_test, y_val, y_test = train_test_split(
 batch_size = 36
 # Define the ImageDataGenerator with horizontal shift and shear augmentation
 datagen = tf.keras.preprocessing.image.ImageDataGenerator(
-    rotation_range=10,
-    width_shift_range=0.1,
-    height_shift_range=0.1,
-    shear_range=0.1,
-    zoom_range=0.05,
-    horizontal_flip=True,
+    preprocessing_function=lambda img: tf.image.rot90(img, k=tf.random.uniform(shape=[], minval=0, maxval=4, dtype=tf.int32)), #rotations done by wang
+    width_shift_range=0.1,  # 10% horizontal shift
+    height_shift_range=0.1,  # 10% vertical shift
+    horizontal_flip=True,  # Random horizontal flip
+    vertical_flip=True,  # Random vertical flip
     fill_mode='nearest'
 )
+
 #Define the approximate no of training images desired post augumentation.
 total_images = 9000
 augmented_images = []
