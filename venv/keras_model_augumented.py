@@ -44,18 +44,18 @@ galaxyimage_bins = np.zeros(len(galaxyimages))
 wanghaloimages = load_images('/Users/jackskinner/Documents/3rd Year/Computer Science/astrodataset/astrodataset/outputdata/outputfits/wang_galaxies/wang001-225,275-500',56)
 wanghaloimage_bins = np.zeros(len(wanghaloimages))
 wangcentreimages = load_images('/Users/jackskinner/Documents/3rd Year/Computer Science/astrodataset/astrodataset/outputdata/outputfits/wang_galaxies/wang225-275',169)
-wangcentreimage_bins = np.zeros(len(wanghaloimages))
+wangcentreimage_bins = np.zeros(len(wangcentreimages))
 #Load synthetic gcs. testsynthetic used to validate CNNs ability to recognise synthetic data.
 syntheticgcimages = load_images('/Volumes/Backup Plus/Pandas_Data/clusters',248)
 syntheticgcimage_bins = np.ones(len(syntheticgcimages))
 testsyntheticgcimages = load_images('/Volumes/Backup Plus/Pandas_Data/clusters',500)
 testsyntheticgcimage_bins = np.ones(len(testsyntheticgcimages))
 # Combine images
-images = np.concatenate((gcimages, galaxyimages,syntheticgcimages), axis=0)
+images = np.concatenate((gcimages, galaxyimages,wanghaloimages, wangcentreimages, syntheticgcimages), axis=0)
 print(len(images))
 
 # Combine labels
-image_bins = np.concatenate((gcimage_bins, galaxyimage_bins,syntheticgcimage_bins), axis=0)
+image_bins = np.concatenate((gcimage_bins, galaxyimage_bins,syntheticgcimage_bins, wangcentreimage_bins, wanghaloimage_bins), axis=0)
 
 
 #Use train_test_split to create training and testing data, with balanced image bins
