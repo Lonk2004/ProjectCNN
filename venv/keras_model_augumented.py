@@ -36,12 +36,16 @@ def load_images(path, noimages):
 
 
 #Load all images in directories
-gcimages = load_images('/Users/jackskinner/Documents/3rd Year/Computer Science/astrodataset/astrodataset/outputdata/outputfits/fitsgcs',135)
+gcimages = load_images('/Users/jackskinner/Documents/3rd Year/Computer Science/astrodataset/astrodataset/outputdata/outputfits/fitsgcs',248)
 gcimage_bins = np.ones(len(gcimages))
 galaxyimages = load_images('/Users/jackskinner/Documents/3rd Year/Computer Science/astrodataset/astrodataset/outputdata/outputfits/galaxies',271)
 galaxyimage_bins = np.zeros(len(galaxyimages))
+wanghaloimages = load_images('/Users/jackskinner/Documents/3rd Year/Computer Science/astrodataset/astrodataset/outputdata/outputfits/wang_galaxies/wang001-225,275-500',56)
+wanghaloimage_bins = np.zeros(len(wanghaloimages))
+wangcentreimages = load_images('/Users/jackskinner/Documents/3rd Year/Computer Science/astrodataset/astrodataset/outputdata/outputfits/wang_galaxies/wang225-275',169)
+wangcentreimage_bins = np.zeros(len(wanghaloimages))
 #Load synthetic gcs. testsynthetic used to validate CNNs ability to recognise synthetic data.
-syntheticgcimages = load_images('/Volumes/Backup Plus/Pandas_Data/clusters',136)
+syntheticgcimages = load_images('/Volumes/Backup Plus/Pandas_Data/clusters',248)
 syntheticgcimage_bins = np.ones(len(syntheticgcimages))
 testsyntheticgcimages = load_images('/Volumes/Backup Plus/Pandas_Data/clusters',500)
 testsyntheticgcimage_bins = np.ones(len(testsyntheticgcimages))
@@ -75,7 +79,7 @@ datagen = tf.keras.preprocessing.image.ImageDataGenerator(
     fill_mode='nearest'
 )
 #Define the approximate no of training images desired post augumentation.
-total_images = 4500
+total_images = 9000
 augmented_images = []
 augmented_labels = []
 
