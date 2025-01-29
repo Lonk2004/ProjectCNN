@@ -72,8 +72,8 @@ batch_size = 36
 # Define the ImageDataGenerator with horizontal shift and shear augmentation
 datagen = tf.keras.preprocessing.image.ImageDataGenerator(
     preprocessing_function=lambda img: tf.image.rot90(img, k=tf.random.uniform(shape=[], minval=0, maxval=4, dtype=tf.int32)), #rotations done by wang
-    width_shift_range=0.1,  # 10% horizontal shift
-    height_shift_range=0.1,  # 10% vertical shift
+    width_shift_range=0.05,  # 5% horizontal shift
+    height_shift_range=0.05,  # 5% vertical shift
     horizontal_flip=True,  # Random horizontal flip
     vertical_flip=True,  # Random vertical flip
     fill_mode='nearest'
@@ -137,21 +137,21 @@ height = 128
 width = 128
 model = Sequential([
     tf.keras.Input(shape=(height, width, 1)),
-    tf.keras.layers.Conv2D(32, (3, 3), activation='relu'),
-    tf.keras.layers.BatchNormalization(),
-    tf.keras.layers.MaxPooling2D((2, 2)),
     tf.keras.layers.Conv2D(64, (3, 3), activation='relu'),
     tf.keras.layers.BatchNormalization(),
     tf.keras.layers.MaxPooling2D((2, 2)),
+    tf.keras.layers.Conv2D(128, (3, 3), activation='relu'),
+    tf.keras.layers.BatchNormalization(),
+    tf.keras.layers.MaxPooling2D((2, 2)),
     tf.keras.layers.Flatten(),
-    tf.keras.layers.Dense(64, activation='relu'),
+    tf.keras.layers.Dense(128, activation='relu'),
     tf.keras.layers.Dropout(0.5),
     tf.keras.layers.Dense(1, activation='sigmoid')  
 ])
 
 #Compile the model using the Adam optimiser, and using binary_crossentropy loss to get a Recall metric.
 model.compile(
-    optimizer=tf.keras.optimizers.Adam(learning_rate=1e-5),
+    optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4),
     loss='binary_crossentropy', 
     metrics=['accuracy', Recall()] 
 )
