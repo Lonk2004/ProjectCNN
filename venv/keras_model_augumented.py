@@ -26,9 +26,17 @@ def load_images(path, noimages):
                 except:
                     continue
                 data = image[0].data 
+                #Crop the images to see if it improves accuracy
                 data = data.astype(np.float32)
+                height, width = data.shape
                 data = np.expand_dims(data, axis=-1)
-                data = tf.image.resize(data, (128, 128))
+                crop_size = 210
+                start_y = (height - crop_size) // 2
+                start_x = (width - crop_size) // 2
+
+                # Slice the central 210x210 region
+                cropped_data = data[start_y:start_y+crop_size, start_x:start_x+crop_size, :]
+                data = tf.image.resize(cropped_data, (128, 128))
                 #Normalise the data for the CNN
                 data = data / np.max(data)
                 images.append(data)
@@ -102,8 +110,8 @@ for i in range(batches_needed):
 # Convert lists to numpy arrays to be used in datasets
 augmented_images = np.array(augmented_images)
 augmented_labels = np.array(augmented_labels)
-expaneded_images = np.concatenate((augmented_images, images), axis=0)
-expanded_image_bins = np.concatenate((augmented_labels, image_bins), axis=0)
+expaneded_images = np.concatenate((augmented_images), axis=0)
+expanded_image_bins = np.concatenate((augmented_labels), axis=0)
 
 #create training, valadation and testing dataset.
 dataset = tf.data.Dataset.from_tensor_slices((expaneded_images, expanded_image_bins))
@@ -133,7 +141,7 @@ class_weights = class_weight.compute_class_weight(
 )
 class_weights = dict(enumerate(class_weights))
 # Keras model with 2 conv layers, max pooling, 1 dense layer and dropout. 
-height = 128
+height = 128    
 width = 128
 model = Sequential([
     tf.keras.Input(shape=(height, width, 1)),
