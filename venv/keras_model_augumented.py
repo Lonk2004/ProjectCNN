@@ -108,10 +108,8 @@ for i in range(batches_needed):
      
 
 # Convert lists to numpy arrays to be used in datasets
-augmented_images = np.array(augmented_images)
-augmented_labels = np.array(augmented_labels)
-expaneded_images = np.concatenate((augmented_images), axis=0)
-expanded_image_bins = np.concatenate((augmented_labels), axis=0)
+expaneded_images = np.concatenate(augmented_images, axis=0)
+expanded_image_bins = np.concatenate(augmented_labels, axis=0)
 
 #create training, valadation and testing dataset.
 dataset = tf.data.Dataset.from_tensor_slices((expaneded_images, expanded_image_bins))
