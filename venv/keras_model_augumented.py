@@ -108,12 +108,12 @@ for i in range(batches_needed):
      
 
 # Convert lists to numpy arrays to be used in datasets
-expaneded_images = np.concatenate(augmented_images, axis=0)
-expanded_image_bins = np.concatenate(augmented_labels, axis=0)
+augmented_images = np.array(augmented_images)
+augmented_labels = np.array(augmented_labels)
 
 #create training, valadation and testing dataset.
-dataset = tf.data.Dataset.from_tensor_slices((expaneded_images, expanded_image_bins))
-dataset = dataset.shuffle(buffer_size=len(expaneded_images))
+dataset = tf.data.Dataset.from_tensor_slices((augmented_images, augmented_labels))
+dataset = dataset.shuffle(buffer_size=len(augmented_images))
 dataset = dataset.batch(batch_size)
 dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
 
