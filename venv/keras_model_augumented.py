@@ -16,18 +16,16 @@ def load_images(path, noimages):
     with os.scandir(path) as files:
         images = []
         nofiles = 0
-        for file in files: 
-            file_list = [file for file in files if not file.name.startswith('.')]
-            selected_files = random.sample(file_list, min(noimages, len(file_list)))
-            #Exeption handling if dataset contains non fits file
-            for file in selected_files:
-                try: 
-                    image = fits.open(file)
-                except:
-                    continue
-                data = image[0].data 
-                #Crop the images to see if it improves accuracy
-                data = data.astype(np.float32)
+        file_list = [entry for entry in files if not entry.name.startswith('.') and entry.is_file()]
+    
+        # Sample once
+        selected_files = random.sample(file_list, min(noimages, len(file_list)))
+    
+        images = []
+        for entry in selected_files:
+            try:
+                hdu = fits.open(entry.path)  # use .path to get the full file path
+                data = hdu[0].data.astype(np.float32)
                 height, width = data.shape
                 data = np.expand_dims(data, axis=-1)
                 crop_size = 210
@@ -37,10 +35,19 @@ def load_images(path, noimages):
                 # Slice the central 210x210 region
                 cropped_data = data[start_y:start_y+crop_size, start_x:start_x+crop_size, :]
                 data = tf.image.resize(cropped_data, (128, 128))
+                data=data.numpy()
                 #Normalise the data for the CNN
-                data = data / np.max(data)
+                min_val = np.min(data)
+                max_val = np.max(data)
+                if max_val - min_val != 0:
+                    data = (data - min_val) / (max_val - min_val)
+                else:
+                    data = data
                 images.append(data)
                 nofiles += 1 
+            except:
+                continue
+
     return np.array(images)
 
 
@@ -63,7 +70,7 @@ images = np.concatenate((gcimages, galaxyimages,wanghaloimages, wangcentreimages
 print(len(images))
 
 # Combine labels
-image_bins = np.concatenate((gcimage_bins, galaxyimage_bins,syntheticgcimage_bins, wangcentreimage_bins, wanghaloimage_bins), axis=0)
+image_bins = np.concatenate((gcimage_bins, galaxyimage_bins, wanghaloimage_bins, wangcentreimage_bins, syntheticgcimage_bins), axis=0)
 
 
 #Use train_test_split to create training and testing data, with balanced image bins
@@ -77,10 +84,13 @@ X_val, X_test, y_val, y_test = train_test_split(
 )
 #Define the CNNs batch size
 batch_size = 36
+
+def random_rot90(img):
+    k = np.random.randint(0, 4)
+    return np.rot90(img, k)
 # Define the ImageDataGenerator with horizontal shift and shear augmentation
 datagen = tf.keras.preprocessing.image.ImageDataGenerator(
-    preprocessing_function=lambda img: tf.image.rot90(img, k=tf.random.uniform(shape=[], minval=0, maxval=4, dtype=tf.int32)), #rotations done by wang
-    width_shift_range=0.05,  # 5% horizontal shift
+    preprocessing_function=random_rot90,
     height_shift_range=0.05,  # 5% vertical shift
     horizontal_flip=True,  # Random horizontal flip
     vertical_flip=True,  # Random vertical flip
@@ -94,8 +104,6 @@ augmented_labels = []
 
 # Number of batches required to reach the desired number of images
 batches_needed = total_images // batch_size
-val_batches_needed = batches_needed / 10
-print(y_train)
 # Create augmented images using the datagen.flow()
 image_generator = datagen.flow(X_train, y_train, batch_size=batch_size, shuffle=True)
 
@@ -110,15 +118,16 @@ for i in range(batches_needed):
 # Convert lists to numpy arrays to be used in datasets
 augmented_images = np.array(augmented_images)
 augmented_labels = np.array(augmented_labels)
+expaneded_images = np.concatenate((augmented_images, X_train), axis=0)
+expanded_image_bins = np.concatenate((augmented_labels, y_train), axis=0)
 
 #create training, valadation and testing dataset.
-dataset = tf.data.Dataset.from_tensor_slices((augmented_images, augmented_labels))
+dataset = tf.data.Dataset.from_tensor_slices((expaneded_images, expanded_image_bins))
 dataset = dataset.shuffle(buffer_size=len(augmented_images))
 dataset = dataset.batch(batch_size)
 dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
 
 val_dataset = tf.data.Dataset.from_tensor_slices((X_val, y_val))
-val_dataset = val_dataset.shuffle(buffer_size=len(X_val))
 val_dataset = val_dataset.batch(batch_size)
 val_dataset = val_dataset.prefetch(tf.data.experimental.AUTOTUNE)
 
@@ -143,14 +152,14 @@ height = 128
 width = 128
 model = Sequential([
     tf.keras.Input(shape=(height, width, 1)),
+    tf.keras.layers.Conv2D(32, (3, 3), activation='relu'),
+    tf.keras.layers.BatchNormalization(),
+    tf.keras.layers.MaxPooling2D((2, 2)),
     tf.keras.layers.Conv2D(64, (3, 3), activation='relu'),
     tf.keras.layers.BatchNormalization(),
     tf.keras.layers.MaxPooling2D((2, 2)),
-    tf.keras.layers.Conv2D(128, (3, 3), activation='relu'),
-    tf.keras.layers.BatchNormalization(),
-    tf.keras.layers.MaxPooling2D((2, 2)),
     tf.keras.layers.Flatten(),
-    tf.keras.layers.Dense(128, activation='relu'),
+    tf.keras.layers.Dense(64, activation='relu'),
     tf.keras.layers.Dropout(0.5),
     tf.keras.layers.Dense(1, activation='sigmoid')  
 ])
