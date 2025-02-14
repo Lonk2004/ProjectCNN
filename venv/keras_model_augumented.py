@@ -11,6 +11,16 @@ from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 import random
 
+def apply_arcsinh_scaling(data, scale_factor=0.90):
+    # Normalize the data to [0, 1]
+    data = data - np.min(data)  # Shift data to start from 0
+
+    # Apply arcsinh scaling
+    scaled_data = np.arcsinh(scale_factor * data)
+
+    scaled_data = scaled_data / np.max(scaled_data)  # Normalize to [0, 1]
+    return scaled_data
+
 #Function call to store fits images as a numpy array. Enter noimages to balance classes. 
 def load_images(path, noimages): 
     with os.scandir(path) as files:
@@ -34,15 +44,10 @@ def load_images(path, noimages):
 
                 # Slice the central 210x210 region
                 cropped_data = data[start_y:start_y+crop_size, start_x:start_x+crop_size, :]
-                data = tf.image.resize(cropped_data, (128, 128))
+                data = tf.image.resize(cropped_data, (200, 200))
                 data=data.numpy()
                 #Normalise the data for the CNN
-                min_val = np.min(data)
-                max_val = np.max(data)
-                if max_val - min_val != 0:
-                    data = (data - min_val) / (max_val - min_val)
-                else:
-                    data = data
+                apply_arcsinh_scaling(data)
                 images.append(data)
                 nofiles += 1 
             except:
@@ -52,10 +57,14 @@ def load_images(path, noimages):
 
 
 #Load all images in directories
-gcimages = load_images('/Users/jackskinner/Documents/3rd Year/Computer Science/astrodataset/astrodataset/outputdata/outputfits/fitsgcs',248)
-gcimage_bins = np.ones(len(gcimages))
-galaxyimages = load_images('/Users/jackskinner/Documents/3rd Year/Computer Science/astrodataset/astrodataset/outputdata/outputfits/galaxies',271)
-galaxyimage_bins = np.zeros(len(galaxyimages))
+gcimages_1 = load_images('/Users/jackskinner/Documents/3rd Year/Computer Science/astrodataset/astrodataset/outputdata/outputfits/fitsgcs/Centre_GCs',200)
+gcimage_bins1 = np.ones(len(gcimages_1))
+gcimages_2 = load_images('/Users/jackskinner/Documents/3rd Year/Computer Science/astrodataset/astrodataset/outputdata/outputfits/fitsgcs/Halo_GCs',48)
+gcimage_bins2 = np.ones(len(gcimages_2))
+galaxyimages_1 = load_images('/Users/jackskinner/Documents/3rd Year/Computer Science/astrodataset/astrodataset/outputdata/outputfits/galaxies/Centre Galaxies',200)
+galaxyimage_bins1 = np.zeros(len(galaxyimages_1))
+galaxyimages_2 = load_images('/Users/jackskinner/Documents/3rd Year/Computer Science/astrodataset/astrodataset/outputdata/outputfits/galaxies/Halo Galaxies',69)
+galaxyimage_bins2 = np.zeros(len(galaxyimages_2))
 wanghaloimages = load_images('/Users/jackskinner/Documents/3rd Year/Computer Science/astrodataset/astrodataset/outputdata/outputfits/wang_galaxies/wang001-225,275-500',56)
 wanghaloimage_bins = np.zeros(len(wanghaloimages))
 wangcentreimages = load_images('/Users/jackskinner/Documents/3rd Year/Computer Science/astrodataset/astrodataset/outputdata/outputfits/wang_galaxies/wang225-275',169)
@@ -66,16 +75,16 @@ syntheticgcimage_bins = np.ones(len(syntheticgcimages))
 testsyntheticgcimages = load_images('/Volumes/Backup Plus/Pandas_Data/clusters',500)
 testsyntheticgcimage_bins = np.ones(len(testsyntheticgcimages))
 # Combine images
-images = np.concatenate((gcimages, galaxyimages,wanghaloimages, wangcentreimages, syntheticgcimages), axis=0)
-print(len(images))
+images = np.concatenate((gcimages_1, gcimages_2, galaxyimages_1, galaxyimages_2,wanghaloimages, wangcentreimages, syntheticgcimages), axis=0)
+images = np.concatenate((gcimages_1,galaxyimages_1), axis=0)
 
 # Combine labels
-image_bins = np.concatenate((gcimage_bins, galaxyimage_bins, wanghaloimage_bins, wangcentreimage_bins, syntheticgcimage_bins), axis=0)
-
+image_bins = np.concatenate((gcimage_bins1, gcimage_bins2, galaxyimage_bins1,galaxyimage_bins2, wanghaloimage_bins, wangcentreimage_bins, syntheticgcimage_bins), axis=0)
+image_bins = np.concatenate((gcimage_bins1, galaxyimage_bins1), axis=0)
 
 #Use train_test_split to create training and testing data, with balanced image bins
 X_train, X_temp, y_train, y_temp = train_test_split(
-    images, image_bins, test_size=0.2, random_state=10, shuffle=True, stratify=image_bins
+    images, image_bins, test_size=0.5, random_state=10, shuffle=True, stratify=image_bins
 )
 
 # Split the test data into validation and testing data. 
@@ -98,7 +107,7 @@ datagen = tf.keras.preprocessing.image.ImageDataGenerator(
 )
 
 #Define the approximate no of training images desired post augumentation.
-total_images = 9000
+total_images = 4500
 augmented_images = []
 augmented_labels = []
 
@@ -148,18 +157,18 @@ class_weights = class_weight.compute_class_weight(
 )
 class_weights = dict(enumerate(class_weights))
 # Keras model with 2 conv layers, max pooling, 1 dense layer and dropout. 
-height = 128    
-width = 128
+height = 200 
+width = 200
 model = Sequential([
     tf.keras.Input(shape=(height, width, 1)),
-    tf.keras.layers.Conv2D(32, (3, 3), activation='relu'),
-    tf.keras.layers.BatchNormalization(),
-    tf.keras.layers.MaxPooling2D((2, 2)),
     tf.keras.layers.Conv2D(64, (3, 3), activation='relu'),
     tf.keras.layers.BatchNormalization(),
     tf.keras.layers.MaxPooling2D((2, 2)),
+    tf.keras.layers.Conv2D(128, (3, 3), activation='relu'),
+    tf.keras.layers.BatchNormalization(),
+    tf.keras.layers.MaxPooling2D((2, 2)),
     tf.keras.layers.Flatten(),
-    tf.keras.layers.Dense(64, activation='relu'),
+    tf.keras.layers.Dense(128, activation='relu'),
     tf.keras.layers.Dropout(0.5),
     tf.keras.layers.Dense(1, activation='sigmoid')  
 ])
