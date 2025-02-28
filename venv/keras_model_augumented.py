@@ -175,7 +175,7 @@ model = Sequential([
 
 #Compile the model using the Adam optimiser, and using binary_crossentropy loss to get a Recall metric.
 model.compile(
-    optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4),
+    optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4,
     loss='binary_crossentropy', 
     metrics=['accuracy', Recall()] 
 )
